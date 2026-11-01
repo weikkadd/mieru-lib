@@ -30,38 +30,10 @@ jobs:
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -buildmode=c-shared -o ../dist/bot_amd64.so .
           ls -la ../dist/
 
-      - name: Audit non-baseline instruction sites
-        run: |
-          objdump -d dist/bot_amd64.so > /tmp/bot.asm || true
-          echo "== BMI2 pdep/pext symbol context =="
-          awk '/^[0-9a-f]+ </{sym=$2} /pdep|pext/{if(!seen[sym]++) print sym}' /tmp/bot.asm | head -20
-          echo "== popcnt sites =="
-          grep -cE "\bpopcnt\b" /tmp/bot.asm || echo "none"
-          echo "== SSE4.x sites =="
-          grep -cE "\bpcmpestr|\bpcmpistr|\bpblendvb|\bpmulld|\baesdec|\baesenc|\bpclmulqdq" /tmp/bot.asm || echo "none"
-          echo "== AVX/AVX2 sites =="
-          grep -cE "\bvmovdq|\bvpaddd|\bvpxor|\bvmulps|\bvgf2p8" /tmp/bot.asm || echo "none"
-
       - name: QEMU cpu-feature bisect (reproduce SIGILL)
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq qemu-user-static
-          cat > probe.c <<'PROBE'
-          #include <dlfcn.h>
-          #include <stdio.h>
-          int main(int argc, char **argv) {
-              void *h = dlopen(argv[1], RTLD_NOW);
-              if (!h) { printf("dlopen-failed: %s\n", dlerror()); return 3; }
-              printf("dlopen-ok\n");
-              if (!dlsym(h, "StartBot")) { printf("sym-missing\n"); return 4; }
-              printf("sym-ok\n");
-              return 0;
-          }
-          PROBE
-          gcc -O2 -o probe probe.c -ldl
-          for FEAT in "" "+popcnt" "+sse4.1" "+sse4.2" "+bmi2" "+avx"; do
-            echo "== qemu64 $FEAT =="
-            qemu-x86_64-static -cpu "qemu64$FEAT" ./probe dist/bot_amd64.so && echo "PASS" || echo "FAIL"
-          done
+          chmod +x qemu_test.sh
+          bash qemu_test.sh
 
       - name: Fetch status_amd64.so (nezha v1 agent, renamed from v1.so)
         run: |
