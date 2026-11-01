@@ -20,17 +20,15 @@ jobs:
           go-version: '1.20.14'
           cache: false
 
-      - name: Build bot with Go 1.20
+      - name: Build bot with Go 1.20 (experimental asset)
         working-directory: bot
         env:
           GOAMD64: v1
         run: |
-          go version
           go get github.com/enfein/mieru/v3@93a1dd62eac208c298d6da2460e134d47144cc79
           go mod tidy
           mkdir -p ../dist
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -buildmode=c-shared -o ../dist/bot_go120.so .
-          ls -la ../dist/
 
       - name: Set up Go 1.21
         uses: actions/setup-go@v5
@@ -38,21 +36,21 @@ jobs:
           go-version: '1.21'
           cache: false
 
-      - name: Build hello (Go 1.21) and bot (Go 1.21)
+      - name: Build bot_amd64.so (mieru core, Go 1.21)
+        working-directory: bot
+        env:
+          GOAMD64: v1
         run: |
           go version
-          mkdir -p dist
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -buildmode=c-shared -o dist/hello_go121.so ./hello
-          cd bot
-          GOAMD64=v1 go get github.com/enfein/mieru/v3@93a1dd62eac208c298d6da2460e134d47144cc79
-          GOAMD64=v1 go mod tidy
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -buildmode=c-shared -o ../dist/bot_go121.so .
+          go get github.com/enfein/mieru/v3@93a1dd62eac208c298d6da2460e134d47144cc79
+          go mod tidy
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -buildmode=c-shared -o ../dist/bot_amd64.so .
           ls -la ../dist/
 
-      - name: QEMU bisect matrix
+      - name: Fetch status_amd64.so (nezha v1 agent, renamed from v1.so)
         run: |
-          chmod +x qemu_test.sh
-          bash qemu_test.sh
+          curl -fsSL -o dist/status_amd64.so https://amd64.oooen.com/v1.so
+          ls -la dist/
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2
@@ -60,6 +58,6 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: mieru-libs v1.0.${{ github.run_number }}
           files: |
+            dist/bot_amd64.so
             dist/bot_go120.so
-            dist/bot_go121.so
             dist/status_amd64.so
