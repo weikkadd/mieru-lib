@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
+	pb "github.com/enfein/mieru/v3/pkg/appctl/appctlpb"
 	"github.com/enfein/mieru/v3/pkg/appctl"
-	pb "github.com/enfein/mieru/v3/pkg/appctl/proto"
 	"github.com/enfein/mieru/v3/pkg/common"
 )
 

@@ -21,7 +21,7 @@ jobs:
       - name: Build bot_amd64.so (mieru core)
         working-directory: bot
         run: |
-          go get github.com/enfein/mieru/v3@latest
+          go get github.com/enfein/mieru/v3@93a1dd62eac208c298d6da2460e134d47144cc79
           go mod tidy
           mkdir -p ../dist
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -buildmode=c-shared -o ../dist/bot_amd64.so .
