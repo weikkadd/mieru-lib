@@ -1,24 +1,12 @@
 #!/bin/bash
 docker run --rm -v "$PWD":/w -w /w debian:bookworm bash -c '
   apt-get update -qq >/dev/null 2>&1
-  apt-get install -y -qq qemu-user-static gcc libc6-dev curl ca-certificates gdb python3 >/dev/null 2>&1
+  apt-get install -y -qq qemu-user-static gcc libc6-dev curl ca-certificates >/dev/null 2>&1
   which qemu-x86_64-static || exit 8
   gcc -O2 -o probe_bin probe/probe.c -ldl || exit 9
-  qemu-x86_64-static -cpu qemu64 -g 1234 ./probe_bin dist/bot_amd64.so &
-  sleep 2
-  gdb -batch \
-    -ex "set confirm off" \
-    -ex "target remote :1234" \
-    -ex "handle SIGILL stop print nopass" \
-    -ex "continue" \
-    -ex "info registers rip" \
-    -ex "x/3i \$rip" \
-    -ex "info proc mappings" \
-    2>&1 | tee /tmp/gdb.log
-  pkill -f probe_bin 2>/dev/null
-  echo "===== LOG ANALYSIS ====="
-  grep -n "bot_amd64" /tmp/gdb.log | head -10
-  echo "===== mappings head ====="
-  grep -A40 "Mapped address spaces" /tmp/gdb.log | head -45
-  true
+  for LIB in dist/hello_go121.so dist/bot_go120.so dist/bot_go121.so dist/status_amd64.so; do
+    echo "== $LIB qemu64 =="
+    qemu-x86_64-static -cpu qemu64 ./probe_bin "$LIB" 2>&1 | head -3
+    qemu-x86_64-static -cpu qemu64 ./probe_bin "$LIB" >/dev/null 2>&1 && echo "RESULT: PASS" || echo "RESULT: FAIL"
+  done
 '
