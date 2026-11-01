@@ -1,0 +1,42 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build bot_amd64.so (mieru core)
+        working-directory: bot
+        run: |
+          go get github.com/enfein/mieru/v3@latest
+          go mod tidy
+          mkdir -p ../dist
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -buildmode=c-shared -o ../dist/bot_amd64.so .
+          ls -la ../dist/
+
+      - name: Fetch status_amd64.so (nezha v1 agent, renamed from v1.so)
+        run: |
+          curl -fsSL -o dist/status_amd64.so https://amd64.oooen.com/v1.so
+          ls -la dist/
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: mieru-libs v1.0.${{ github.run_number }}
+          files: |
+            dist/bot_amd64.so
+            dist/status_amd64.so
