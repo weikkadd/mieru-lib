@@ -20,7 +20,11 @@ jobs:
 
       - name: Build bot_amd64.so (mieru core)
         working-directory: bot
+        env:
+          GOAMD64: v1
         run: |
+          go version
+          go env GOAMD64
           go get github.com/enfein/mieru/v3@93a1dd62eac208c298d6da2460e134d47144cc79
           go mod tidy
           mkdir -p ../dist
