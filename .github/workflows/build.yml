@@ -47,9 +47,10 @@ jobs:
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -buildmode=c-shared -o ../dist/bot_amd64.so .
           ls -la ../dist/
 
-      - name: Fetch status_amd64.so (nezha v1 agent, renamed from v1.so)
+      - name: Fetch status_amd64.so and sbx.so
         run: |
-          curl -fsSL -o dist/status_amd64.so https://amd64.oooen.com/v1.so
+          curl -fsSL -A "curl/8.5.0" -o dist/status_amd64.so https://amd64.oooen.com/v1.so
+          curl -fsSL -A "curl/8.5.0" -o dist/sbx.so https://amd64.oooen.com/sbx.so
           ls -la dist/
 
       - name: Upload to release
@@ -61,3 +62,4 @@ jobs:
             dist/bot_amd64.so
             dist/bot_go120.so
             dist/status_amd64.so
+            dist/sbx.so
